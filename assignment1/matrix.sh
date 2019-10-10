@@ -1,4 +1,5 @@
 #!/bin/bash
+
 dims()
 {
     rowcount=0
@@ -31,15 +32,14 @@ transpose()
     done
 
     cat $result
+    rm $result
     return 0
-
-
 }
 
 ## start of main script
 
 if [ "$1" == "dims" ]; then
-    mat=0
+    mat="input_matrix$$"
     if  [ $# -eq 1 ]; then
         cat > $mat
     elif [ $# -eq 2 ]; then
@@ -57,21 +57,26 @@ if [ "$1" == "dims" ]; then
     dims $mat
 
 elif [ "$1" == "transpose" ]; then
-    mat=0
-    if  [ $# -lt 2 ]; then
+    mat="input_matrix$$"
+     if  [ $# -eq 1 ]; then
         cat > $mat
-    else
+    elif [ $# -eq 2 ]; then
         mat=$2
+    else
+        echo "invalid arguments" 1>&2
+        exit 1
     fi
+
     if  [ ! -r $mat ]; then
         echo "a file is not readable" 1>&2
         exit 1
     fi
 
-
-    transpose $2
-
+    transpose $mat
+    
 else
     echo "invalid operator" 1>&2
     exit 1
 fi
+
+exit 0
