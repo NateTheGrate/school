@@ -31,7 +31,7 @@ transpose()
         
     done
 
-    cat $tresult
+    
     return 0
 }
 
@@ -74,6 +74,27 @@ add()
 
 }
 
+mean()
+{
+
+    rows="$(dims $1 | cut -d ' ' -f 1)"
+
+    mat="_mtemp"
+    cat $1 > $mat 
+    transpose $mat
+    mresult="_mean$$"
+    while read -a row; do
+        total=0
+        for i in "${row[@]}"; do
+            let total+=$i
+        done
+        printf '%s\t' "$(( ($total + ($rows/2)*( ($total>0)*2-1) ) / $rows ))" >> $mresult
+    done < $tresult
+
+    printf '%s\n' "`cat $mresult | sed 's/^[ \t]*//;s/[ \t]*$//'`"
+    return 1
+}
+
 ## start of main script ##
 
 if [ "$1" == "dims" ]; then
@@ -111,6 +132,7 @@ elif [ "$1" == "transpose" ]; then
     fi
 
     transpose $mat
+    cat $tresult
     
 elif [ "$1" == "add" ]; then
     
@@ -133,6 +155,26 @@ elif [ "$1" == "add" ]; then
         exit 1
     fi
     add $2 $3
+
+elif [ "$1" == "mean" ]; then
+
+    mat="_input_matrix$$"
+     if  [ $# -eq 1 ]; then
+        cat > $mat
+    elif [ $# -eq 2 ]; then
+        mat=$2
+    else
+        echo "invalid arguments" 1>&2
+        exit 1
+    fi
+
+    if (( $# < 2 )); then
+        echo "invalid arguments" 1>&2
+        exit 1
+    fi
+
+    mean $mat
+
 
 else
     echo "invalid operator" 1>&2
