@@ -23,14 +23,13 @@ transpose()
 {
     tresult="_transpose_result$$"
     cols="$(dims $1 | cut -d ' ' -f 2)"
+    
 
     for (( i=1; i<=$cols; i++ )); do
-        
-        column="$(cat $mat | cut -f $i)"
+        column="$(cat $1 | cut -f $i)"
         echo $column | tr -s ' ' '\t' >> $tresult
         
     done
-
     
     return 0
 }
@@ -93,6 +92,32 @@ mean()
 
     printf '%s\n' "`cat $mresult | sed 's/^[ \t]*//;s/[ \t]*$//'`"
     return 1
+}
+
+multiply()
+{
+
+    multresult="_multresult$$"
+    mat2="_multtemp$$"
+
+    cat $2 > $mat2
+    transpose $mat2
+    while read -a mat1row; do
+        
+        while read -a mat2row; do
+            dot_product=0
+            for i in ${!mat1row[@]}; do
+                let dot_product+=${mat1row[$i]}*${mat2row[$i]}
+            done
+            printf "%s\t" "$dot_product" >> $multresult
+        done < $tresult
+
+        printf "\n" >> $multresult
+
+    done < $1
+
+    printf '%s\n' "`cat $multresult | sed 's/^[ \t]*//;s/[ \t]*$//'`"
+
 }
 
 ## start of main script ##
@@ -168,13 +193,25 @@ elif [ "$1" == "mean" ]; then
         exit 1
     fi
 
-    if (( $# < 2 )); then
+    mean $mat
+
+elif [ "$1" == "multiply" ]; then
+
+    if (( $# < 3 )); then
         echo "invalid arguments" 1>&2
         exit 1
     fi
 
-    mean $mat
+    cols1="$(dims $2 | cut -d ' ' -f 2)"
+    rows2="$(dims $3 | cut -d ' ' -f 1)"
 
+
+    if [[ "$cols1" != "$rows2" ]]; then
+        echo "mismatched matricies" 1>&2
+        exit 1
+    fi
+
+    multiply $2 $3
 
 else
     echo "invalid operator" 1>&2
