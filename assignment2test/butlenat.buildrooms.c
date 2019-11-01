@@ -229,6 +229,7 @@ char* room_to_string(struct room* room){
         sprintf(buffer + strlen(buffer), "CONNECTION %d: %c\n", i, room->connections[i]);
     }
     sprintf(buffer + strlen(buffer), "ROOM_TYPE: %s\n", room->id);
+    //sprintf(buffer + strlen(buffer), "\n");
 
     return buffer;
 
