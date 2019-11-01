@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <pthread.h>
+#include <assert.h>
+
 
 struct player{
     char* history;
@@ -18,6 +21,11 @@ struct connections{
     int size;
     char name;
 };
+
+int resultInt;
+pthread_t p;
+pthread_mutex_t lock;
+
 
 char* newest_dir(){
 
@@ -123,7 +131,7 @@ struct connections* get_connections(char* path){
 
     }
 
-    size_t linebuffer = 5;
+    size_t linebuffer = 256;
     char* buf = (char*)malloc(linebuffer * sizeof(char));
     int line_size = getline(&buf, &linebuffer, f);
     char* comp = "CONNECTION ";
@@ -146,8 +154,31 @@ struct connections* get_connections(char* path){
     return cons;
 }
 
+void create_file(char* path){
 
-char* get_time(){
+    int file_desc = open(path, O_WRONLY | O_CREAT, 0600);
+    if(file_desc < 0){
+        fprintf(stderr, "could not open %s\n", path);
+        //perrer("error in create_file()");
+        exit(1);
+    }
+    close(file_desc);
+}
+
+void write_to_file(char* path, char* data){
+    int file_desc = open(path, O_WRONLY);
+    if(file_desc < 0){
+        fprintf(stderr, "could not open %s\n", path);
+        //perrer("error in write_to_file()");
+        exit(1);
+    }
+
+    write(file_desc, data, strlen(data) * sizeof(char));
+
+    close(file_desc);
+}
+
+void* write_time(){
 
     time_t t;
     char* buffer = malloc(sizeof(char) * 256);
@@ -159,8 +190,18 @@ char* get_time(){
 
     strftime(buffer, sizeof(char) * 256, "%I:%M%p, %A, %B %d, %C%y", pnt);
 
-    printf("%s", buffer);
+    create_file("./currentTime.txt");
+    write_to_file("./currentTime.txt", buffer);
+ 
+}
 
+void get_time(){
+
+    FILE* f = fopen("./currentTime.txt", "r");
+    size_t linebuffer = 256;
+    char* buf = (char*)malloc(linebuffer * sizeof(char));
+    getline(&buf, &linebuffer, f);
+    printf("%s", buf);
 }
 
 char* get_name_input(){
@@ -182,8 +223,30 @@ void print_stats(struct player* p){
 
 }
 
-void game(){
 
+void create_thread(){
+
+    pthread_mutex_lock(&lock);
+    int resultInt;
+    pthread_t p;
+
+    resultInt = pthread_create(&p, NULL, write_time, NULL);
+    assert(0 == resultInt);
+
+
+    void* val;
+
+    resultInt = pthread_join(p, &val);
+    assert(0 == resultInt);
+
+    pthread_mutex_unlock(&lock);
+
+}
+
+void* game(){
+
+
+    
 
     struct player* p = malloc(sizeof(struct player));
     p->history = malloc(sizeof(char) * 256);
@@ -193,7 +256,7 @@ void game(){
     struct connections* cons = get_connections(path);
 
 
-    while(strcmp(path, find_id(newest_dir(), "END_ROOM"))){
+    while(strcmp(path, find_id(newest_dir(), "END_ROOM") )){
 
 
         
@@ -207,6 +270,20 @@ void game(){
 
         char* input = get_name_input();
         // check for time?
+
+        while (strncmp(input, "time", 4) == 0){
+            printf("\n");
+            create_thread();
+            
+            get_time();
+            printf("\n");
+
+
+            printf("\nWHERE TO? >");
+
+            input = get_name_input();
+        }
+
         int isroom = 0;
 
         for(int i = 0; i < cons->size; i++){
@@ -225,23 +302,39 @@ void game(){
             p->history[p->size] = input[0];
             p->size++;
         }
-        printf("\n");
+        
 
         
         cons = get_connections(path);
-
+    
+        printf("\n");
     }
     
     printf("YOU HAVE FOUND THE END ROOM. CONGRATULATIONS!");
     print_stats(p);
 
-
+    return NULL;
 }
+
+
 
 int main(){
 
-    //game();
-    get_time();
+    if (pthread_mutex_init(&lock, NULL) != 0){ 
 
+        printf("mutex init has failed"); 
+        return 1; 
+    
+    } 
+
+    resultInt = pthread_create(&p, NULL, game, NULL);
+    assert(0 == resultInt);
+
+    void* val;
+
+    resultInt = pthread_join(p, &val);
+    assert(0 == resultInt);
+
+    pthread_mutex_destroy(&lock);
     return 0;
 }
