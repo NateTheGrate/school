@@ -289,7 +289,6 @@ void* game(){
 
         int isroom = 0;
 
-        int i;
         for(i = 0; i < cons->size; i++){
 
             if(input[0] == cons->names[i]){
