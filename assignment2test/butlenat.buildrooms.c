@@ -40,7 +40,8 @@ int random_index(int used[10], int size){
 
         r = rand() % 10;
 
-        for(int i = 0; i < size; i++){
+        int i;
+        for(i = 0; i < size; i++){
 
             if(r == used[i]){
                 stop = 0;
@@ -67,7 +68,8 @@ struct room* init_room_array(){
     size++;
 
     init_room(&(rooms[0]), 0, r);
-    for(int i = 1; i < 6; i++){
+    int i;
+    for(i = 1; i < 6; i++){
 
         r = random_index(used_nums, size);
         used_nums[size] = r;
@@ -89,7 +91,8 @@ void print_room(struct room* room){
             room->id, room->name, room->num_connections);
 
     printf(" connections: ");
-    for(int i = 0; i < room->num_connections; i++){
+    int i;
+    for(i = 0; i < room->num_connections; i++){
         printf("%c ", room->connections[i]);
     }
     printf("\n");
@@ -98,7 +101,8 @@ void print_room(struct room* room){
 
 void print_rooms(struct room** rooms){
 
-    for(int i = 0; i < 7; i++){
+    int i;
+    for(i = 0; i < 7; i++){
 
         print_room(&((*rooms)[i]));
 
@@ -133,7 +137,8 @@ int IsSameRoom(struct room* x, struct room* y)
 // Returns true if a connection from Room x to Room y already exists, false otherwise
 int ConnectionAlreadyExists(struct room* x, struct room* y)
 {
-    for(int i = 0; i < x->num_connections; i++){
+    int i;
+    for(i = 0; i < x->num_connections; i++){
 
         if(x->connections[i] == y->name){
             return 1;
@@ -154,7 +159,8 @@ void ConnectRoom(struct room* x, struct room* y)
 // Returns true if all rooms have 3 to 6 outbound connections, false otherwise
 int IsGraphFull(struct room** rooms)  
 {
-    for(int i = 0; i < 7; i++){
+    int i;
+    for(i = 0; i < 7; i++){
         if((*rooms)[i].num_connections < 3 ){
             return 0;
         }
@@ -225,7 +231,8 @@ char* room_to_string(struct room* room){
     char* buffer = malloc(256 * sizeof(char));
 
     sprintf(buffer, "ROOM NAME: %c\n", room->name);
-    for(int i = 0; i < room->num_connections; i++){
+    int i;
+    for(i = 0; i < room->num_connections; i++){
         sprintf(buffer + strlen(buffer), "CONNECTION %d: %c\n", i, room->connections[i]);
     }
     sprintf(buffer + strlen(buffer), "ROOM_TYPE: %s\n", room->id);
@@ -239,7 +246,8 @@ char* room_to_string(struct room* room){
 void write_rooms(struct room** rooms, char* dir){
 
     struct room* rs = *rooms;
-    for(int i = 0; i < 7; i++){
+    int i;
+    for(i = 0; i < 7; i++){
 
         char* filepath = malloc(sizeof(char) * 256);
         sprintf(filepath, "%s/%c.txt", dir, rs[i].name);
@@ -265,7 +273,8 @@ int main(){
 
     char* dir = make_directory();
 
-    for(int i = 0; i < 7; i++){
+    int i;
+    for(i = 0; i < 7; i++){
         char buffer[256];
         sprintf(buffer, "%s/%c.txt", dir,rooms[i].name);
         create_file(buffer);

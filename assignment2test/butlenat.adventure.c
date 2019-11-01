@@ -112,7 +112,8 @@ void print_connections(struct connections* cons){
 
     printf("name: %c\n", cons->name);
     printf("connections: ");
-    for(int i = 0; i < cons->size; i++){
+    int i;
+    for(i = 0; i < cons->size; i++){
         printf("%c, ", cons->names[i]);
     }
     printf("\n");
@@ -217,7 +218,8 @@ char* get_name_input(){
 void print_stats(struct player* p){
 
     printf("YOU TOOK %d STEPS. YOU PATH TO VICTORY WAS:\n", p->size);
-    for( int i = 0; i < p->size; i++){
+    int i;
+    for(i = 0; i < p->size; i++){
         printf("%c\n", p->history[i]);
     }
 
@@ -262,7 +264,8 @@ void* game(){
         
         printf("CURRENT LOCATION: %c\n", cons->name);
         printf("POSSIBLE CONNENCTIONS: ");
-        for(int i = 0; i < cons->size - 1; i++){
+        int i;
+        for(i = 0; i < cons->size - 1; i++){
             printf("%c, ", cons->names[i]);
         }
         printf("%c.\n", cons->names[cons->size - 1]);
@@ -286,7 +289,8 @@ void* game(){
 
         int isroom = 0;
 
-        for(int i = 0; i < cons->size; i++){
+        int i;
+        for(i = 0; i < cons->size; i++){
 
             if(input[0] == cons->names[i]){
                 isroom = 1;
