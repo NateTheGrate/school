@@ -8,25 +8,20 @@
 #include <fcntl.h>
 
 
+// author: Nathanael Butler
+// Date: 11/20/19
+// program 3: smallsh
+// Description: a minimal c-shell
+
 int exitStatus = 0; // not a boolean, 0 means good
 int terminated = 0; // false
 int termsignal = 0;
 
 int fgmodeonly = 0;
 
-void handleProcessExit(int childExitMethod){
-
-    if(WIFEXITED(childExitMethod) != 0){
-        printf("the process exited normally\n");
-    }else {
-        int termSignal = WTERMSIG(childExitMethod);
-        printf("the process was terminated by the signal, %d\n", termSignal);
-    }
-
-}
-
 void changeDir(char* path){
-    
+
+    // default to HOME
     if(strlen(path) == 0){
         chdir(getenv("HOME"));
         char buff[256];
@@ -36,6 +31,7 @@ void changeDir(char* path){
         return;
     }
 
+    // invalid input
     if(chdir(path) != 0){
     
         printf("%s: no such file or directory\n", path);
@@ -43,6 +39,8 @@ void changeDir(char* path){
         return;
     }
 
+
+    // print out changed directory
     char buff[256];
     getcwd(buff, 256);
     printf("%s\n", buff);
@@ -54,6 +52,7 @@ void doExit(){
     int childPid = -5;
     int childExitMethod = -5;
 
+    // wait for everything to finish
     while((childPid) = wait(&childExitMethod) > 0){
         // do nothing
     }
@@ -63,6 +62,9 @@ void doExit(){
 
 
 void splitInput(char* input, char** output, int* size){
+
+
+    // split the input into indiviual words
 
     char* word = strtok(input, " ");
     int i = 0;
@@ -79,6 +81,7 @@ void splitInput(char* input, char** output, int* size){
 
 void doStatus(){
 
+    // print either the terminating signal or exit status
     if(terminated){
         printf("terminated by signal %d\n", termsignal);
     }else{
@@ -90,6 +93,8 @@ void doStatus(){
 }
 
 void initializebghandlers(){
+
+    // background processess ignore sigint signals
     struct sigaction ignore_action = {0};
 
     ignore_action.sa_handler = SIG_IGN;
@@ -105,6 +110,7 @@ void catchSIGINT(int signo){
 }
 
 void initializefghandlers(){
+    // foreground processes are terminated by sigint
     struct sigaction SIGINT_action = {0};
     SIGINT_action.sa_handler = catchSIGINT;
     sigfillset(&SIGINT_action.sa_mask);
@@ -114,7 +120,7 @@ void initializefghandlers(){
 }
 
 void initializeproccesshandlers(){
-
+    // all child processes ignore sigtstp signals
     struct sigaction ignore_action = {0};
 
     ignore_action.sa_handler = SIG_IGN;
@@ -125,6 +131,7 @@ void initializeproccesshandlers(){
 
 void handleInput(char* input, int** bg_processes, int* bgsize){
 
+    // replace $$ with the pid
     char* dollardollarbillzyall = strstr(input, "$$");
     if(dollardollarbillzyall != NULL){
         int index = dollardollarbillzyall - input;
@@ -138,6 +145,7 @@ void handleInput(char* input, int** bg_processes, int* bgsize){
         input = comb;
     }
 
+    // setup array to split up the input
     char** results = malloc(sizeof(char*) * 512);
     int size = 0;
     for(int i = 0; i < 512; i++){
@@ -146,6 +154,8 @@ void handleInput(char* input, int** bg_processes, int* bgsize){
 
     splitInput(input, results, &size);
 
+
+    // handle bulit-in functions
     if(strncmp(results[0], "exit", 4)==0 && (strlen(results[0]) >= 4)){
         doExit();
     }else if(strncmp(results[0], "cd", 2) == 0 && (strlen(results[0]) >= 2)){
@@ -154,12 +164,14 @@ void handleInput(char* input, int** bg_processes, int* bgsize){
         doStatus();
     } else{
         
+        // handle exec functions
         int arsize = 0;
         int targetFD, sourceFD, savedout, savedin;
         savedout = dup(1);
         savedin = dup(0);
-
         int shouldbool = 0;
+
+        // setup file redirects and correct sizing for argument array
         for(int i = 0; i < size; i++){
 
             if(strncmp(results[i], ">", 1) == 0){
@@ -201,6 +213,7 @@ void handleInput(char* input, int** bg_processes, int* bgsize){
 
         int makebg = 0;
         char* args[arsize+1];
+        // fill in argument array for exec, also tell when to make background process
         for(int i = 0; i < size; i++){
             if(strncmp(results[i], ">", 1) == 0){
                 i+=2;
@@ -217,6 +230,8 @@ void handleInput(char* input, int** bg_processes, int* bgsize){
         }
         args[arsize] = NULL;
 
+
+        // create new child process to run exec
         int spawnPid = -5;
         int childExitMethod = -5;
         spawnPid = fork();
@@ -228,22 +243,22 @@ void handleInput(char* input, int** bg_processes, int* bgsize){
                 exit(1); break;
                
             case 0:
+                // initialize signal handlers
                 if(makebg == 1){
                     
-                    (*bg_processes)[*bgsize] = getpid();
-                    
-                    (*bgsize)++;
                     initializebghandlers();
                 }else{
+                    
                     initializefghandlers();
                 }
                 initializeproccesshandlers();
-
+                // run command
                 execvp(*args, args);
                 perror(args[0]);
                 exit(1); break;
             
             default:
+                // change exit status and wait for foreground process
                 if(!makebg){
                     waitpid(spawnPid, &childExitMethod, 0);
 
@@ -256,11 +271,12 @@ void handleInput(char* input, int** bg_processes, int* bgsize){
                     }
 
                 }else{
-    
+                    // add to background proccesses list
                     (*bg_processes)[*bgsize] = spawnPid;
                     
                     (*bgsize)++;
                 }
+                // comeback to user input
                 dup2(savedin, 0);
                 dup2(savedout, 1);
                 close(savedin);
@@ -275,14 +291,14 @@ void check_bg(int* bgprocesses, int* size){
 
     int childPid = bgprocesses[0];
     int childExitMethod = -5;
-
+    
     for(int i = 0; i < *size; i++){
-
+        // check if each background process stopped
         childPid = bgprocesses[i];
         
         if(childPid != -1){
             int actualPid = waitpid(childPid, &childExitMethod, WNOHANG);
-
+            // if process finished
             if(actualPid != 0){
 
                 int myexitStatus = 0;
@@ -296,7 +312,7 @@ void check_bg(int* bgprocesses, int* size){
                     myterminated = 1;
                     mytermsignal = WTERMSIG(childExitMethod);
                 }
-                
+                // print background process stopped with exit status
                 printf("background pid %d is done: ", actualPid);
                 fflush(stdout);
                 if(terminated){
@@ -306,6 +322,7 @@ void check_bg(int* bgprocesses, int* size){
                 }
 
                 fflush(stdout);
+                // remove it from the list
                 bgprocesses[i] = -1;
             }
         }
@@ -317,6 +334,8 @@ void check_bg(int* bgprocesses, int* size){
 
 void catchSIGTSTP(int signo)
 {
+
+    // toggle foreground only mode
     char* message;
     
     if(!fgmodeonly){
