@@ -269,11 +269,29 @@ int main(int argc, char *argv[]){
                 // exit without errors
                 exit(0); break;
             default:
-                // check if one of the child processes has finished
+                // check if this child processes has finished
+                somepid = 0;
+                somepid = waitpid(spawnPid, &childExitMethod, WNOHANG);
+
+                // if it finishes, act like nothing happened
+                if(somepid != 0){
+                    processnum--;
+                }else{
+                    // find first open slot, and add pid to it
+                    for(int i = 0; i < processnum; i++){
+                        if(active_childs[i] == 0){
+                            active_childs[i] = spawnPid;
+                            break;
+                        }
+                    }
+                    
+                }
+
+                // check the rest of the the unfinished processes
                 for(int i = 0; i < processnum; i++){
                     somepid = 0;
                     
-                    somepid = waitpid(spawnPid, &childExitMethod, WNOHANG);
+                    somepid = waitpid(active_childs[i], &childExitMethod, WNOHANG);
 
                     // if a child process finishes, set pid to 0
                     if(somepid != 0){

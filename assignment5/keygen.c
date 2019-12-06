@@ -14,6 +14,7 @@ int main(int argc, char* argv[]){
         if(r == '@') r = ' ';
         printf("%c", r);
     }
+    printf("\n");
 
     return 0;
 }

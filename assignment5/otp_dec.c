@@ -17,16 +17,17 @@ void error(const char *msg) {
 	fflush(stderr);
 	exit(1); 
 } // Error function used for reporting issues
+
 void error_noclose(const char *msg) {
 	fprintf(stderr, "CLIENT: %s\n", msg);
-	fflush(stderr); 
+	fflush(stderr);
 } // Error function used for reporting issues
 
 int is_valid(char* text){
 
     for(int i = 0; i < strlen(text); i++){
         // if text is not a capital letter or ' ', return false
-        if(text[i] != ' ' && (text[i] < 'A' || text[i] > 'Z')){
+        if(text[i] != ' ' && text[i] != '@' && (text[i] < 'A' || text[i] > 'Z')){
             return 0;
         }
     }
@@ -78,10 +79,10 @@ char* get_line(char* path){
 
 	char* buf = malloc(sizeof(char) * 10000);
 	memset(buf, '\0', 10000);
-	size_t linebuffer1 = 10000;
+
     
-    getline(&buf, &linebuffer1, f);
-    buf[strcspn(buf, "\n")] = '\0'; // Remove the trailing \n that fgets adds
+    fgets(buf, 10000, f);
+	buf[strcspn(buf, "\n")] = '\0'; // Remove the trailing \n that fgets adds
 	//printf("%s", buf);
 	fclose(f);
 
@@ -152,14 +153,16 @@ int main(int argc, char *argv[]) {
 	// Connect to server
 	if (connect(socketFD, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) // Connect socket to address
 		error("CLIENT: ERROR connecting");
+	
 
+	//char* hello = "enc";
 	snd(socketFD, "dec");
 	char* helloback = rec(socketFD);
 
 	if(strncmp(helloback, "dec", 3) != 0){
 		close(socketFD); // Close the socket
 		error_noclose("Error: can only connect to otp_dec_d");
-        exit(2);
+		exit(2);
 	}
 
 	// send plaintext and error handle
@@ -190,7 +193,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// print final result
-	printf("%s", ciphertext);
+	printf("%s\n", ciphertext);
 
 	close(socketFD); // Close the socket
 	return 0;

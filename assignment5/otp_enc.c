@@ -27,7 +27,7 @@ int is_valid(char* text){
 
     for(int i = 0; i < strlen(text); i++){
         // if text is not a capital letter or ' ', return false
-        if(text[i] != ' ' && (text[i] < 'A' || text[i] > 'Z')){
+        if(text[i] != ' ' && text[i] != '@' && (text[i] < 'A' || text[i] > 'Z')){
             return 0;
         }
     }
@@ -79,9 +79,9 @@ char* get_line(char* path){
 
 	char* buf = malloc(sizeof(char) * 10000);
 	memset(buf, '\0', 10000);
-	size_t linebuffer1 = 10000;
+
     
-    getline(&buf, &linebuffer1, f);
+    fgets(buf, 10000, f);
 	buf[strcspn(buf, "\n")] = '\0'; // Remove the trailing \n that fgets adds
 	//printf("%s", buf);
 	fclose(f);
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// print final result
-	printf("%s", ciphertext);
+	printf("%s\n", ciphertext);
 
 	close(socketFD); // Close the socket
 	return 0;
